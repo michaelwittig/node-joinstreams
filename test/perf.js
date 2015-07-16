@@ -25,6 +25,17 @@ NumberStream.prototype._read = function(_size) {
 describe("perf", function() {
   "use strict";
   var desired = 10 * 1000 * 1000;
+  it("read many items from one plain stream", function(done) {
+    var reads = 0;
+    new NumberStream(desired)
+      .on("data", function(data) {
+        reads += 1;
+      })
+      .on("end", function() {
+        assert.equal(reads, desired, "reads");
+        done();
+      });
+  });
   it("read many items from one stream", function(done) {
     var reads = 0;
     index([new NumberStream(desired)])
