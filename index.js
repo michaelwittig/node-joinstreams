@@ -12,8 +12,10 @@ function ReadableJoinedStream(streams) {
   this.__read = []; // current read, will contain this.__readables.length elements when done with a "line"
   this.__reading = 0; // stream index we are reading from
   this.__fetching = false; // are we in the process of fetching data from the streams?
+  this.__eof = false;
   var self = this;
   streams[0].on("end", function() { // we assume that all streams are of equal length
+    self.__eof = true;
     self.push(null);
   });
   streams.forEach(function(stream) {
@@ -28,7 +30,7 @@ function ReadableJoinedStream(streams) {
 util.inherits(ReadableJoinedStream, stream.Readable);
 ReadableJoinedStream.prototype.__fetch = function() {
   "use strict";
-  if (this.__fetching === true) {
+  if (this.__fetching === true || this.__eof === true) {
     return;
   }
   this.__fetching = true;
