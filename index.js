@@ -13,9 +13,7 @@ function ReadableJoinedStream(streams) {
   this.__reading = 0; // stream index we are reading from
   this.__fetching = false; // are we in the process of fetching data from the streams?
   var self = this;
-  streams[0].on("end", function() { // we assume that all streams are of equal length
-    self.push(null);
-  });
+  var ended = 0;
   streams.forEach(function(stream) {
     stream.on("readable", function() {
       self.__readable += 1;
@@ -23,12 +21,18 @@ function ReadableJoinedStream(streams) {
         self.emit("__readable");
       }
     });
+    stream.once("end", function() { // we assume that all streams are of equal length
+      ended += 1;
+      if (ended === self.__readables) {
+        self.push(null);
+      }
+    });
   });
 }
 util.inherits(ReadableJoinedStream, stream.Readable);
 ReadableJoinedStream.prototype.__fetch = function() {
   "use strict";
-  if (this.__fetching === true) {
+  if (this.__fetching === true) { // prevent multiple fetches
     return;
   }
   this.__fetching = true;
@@ -57,7 +61,7 @@ ReadableJoinedStream.prototype._read = function(_size) {
   "use strict";
   if (this.__readable === this.__readables) {
     this.__fetch();
-  } else {
+  } else { // not all streams are readable. wait until all streams are readable
     var self = this;
     this.once("__readable", function() {
       self.__fetch();
