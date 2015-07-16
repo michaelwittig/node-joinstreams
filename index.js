@@ -1,7 +1,7 @@
 var util = require("util");
 var stream = require("stream");
 
-var READ_HIGH_WATER_MARK = 1024;
+var READ_HIGH_WATER_MARK = 128;
 
 function ReadableJoinedStream(streams) {
   "use strict";

@@ -1,4 +1,3 @@
-var fs = require("fs");
 var stream = require("stream");
 
 var assert = require("assert-plus");
@@ -81,7 +80,7 @@ describe("joinstreams", function() {
       stream2.push(null);
     }, 800);
   });
-  it("one slow and one slow stream", function(done) {
+  it("one slow and one fast stream", function(done) {
     var stream1 = new stream.Readable({objectMode: true});
     stream1._read = function(_size) {};
     var stream2 = new stream.Readable({objectMode: true});
