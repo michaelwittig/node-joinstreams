@@ -12,16 +12,18 @@ function ReadableJoinedStream(streams) {
   this.__read = []; // current read, will contain this.__readables.length elements when done with a "line"
   this.__reading = 0; // stream index we are reading from
   this.__fetching = false; // are we in the process of fetching data from the streams?
+  this.__end = streams.map(function() {return false;});
   var self = this;
   var ended = 0;
-  streams.forEach(function(stream) {
+  streams.forEach(function(stream, streamIndex) {
     stream.on("readable", function() {
       self.__readable += 1;
       if (self.__readable === self.__readables) {
-        self.emit("__readable");
+        self.__fetch();
       }
     });
     stream.once("end", function() { // we assume that all streams are of equal length
+      self.__end[streamIndex] = true;
       ended += 1;
       if (ended === self.__readables) {
         self.push(null);
@@ -39,10 +41,12 @@ ReadableJoinedStream.prototype.__fetch = function() {
   while(true) {
     while (this.__reading < this.__readables) {
       var read = this.__streams[this.__reading].read();
-      if (read === null) { // nothing to read
-        this.__readable -= 1;
-        this.__fetching = false;
-        return;
+      if (read === null) { // nothing to read or end of stream?
+        if (this.__end[this.__reading] === false) { // if end of stream is reached continue with the other streams to also end them
+          this.__readable -= 1;
+          this.__fetching = false;
+          return;
+        }
       }
       this.__read.push(read);
       this.__reading += 1;
@@ -61,11 +65,6 @@ ReadableJoinedStream.prototype._read = function(_size) {
   "use strict";
   if (this.__readable === this.__readables) {
     this.__fetch();
-  } else { // not all streams are readable. wait until all streams are readable
-    var self = this;
-    this.once("__readable", function() {
-      self.__fetch();
-    });
   }
 };
 
